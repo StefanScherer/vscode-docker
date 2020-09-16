@@ -1,11 +1,8 @@
-version: '3.4'
-
-services:
   {{ serviceName }}:
     image: {{ serviceName }}
-    build: .
-    environment:
-      NODE_ENV: production
+    build:
+      context: .
+      dockerfile: Dockerfile
 {{#if ports}}
     ports:
 {{#each ports}}

@@ -1,16 +1,12 @@
-version: '3.4'
-
-services:
   {{ serviceName }}:
     image: {{ serviceName }}
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     environment:
-      JAVA_OPTS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005,quiet=y
+      NODE_ENV: development
 {{#if (join ports debugPorts)}}
     ports:
 {{#each (join ports debugPorts)}}
       - {{ . }}:{{ . }}
 {{/each}}
 {{/if}}
+    command: {{{ toQuotedArray nodeDebugCmdParts }}}

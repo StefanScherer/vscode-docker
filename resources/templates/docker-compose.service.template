@@ -1,0 +1,9 @@
+  {{ serviceName }}:
+    image: {{ serviceName }}
+    build: .
+{{#if ports}}
+    ports:
+{{#each ports}}
+      - {{ . }}:{{ . }}
+{{/each}}
+{{/if}}

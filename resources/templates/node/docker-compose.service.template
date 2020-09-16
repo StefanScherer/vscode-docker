@@ -1,0 +1,11 @@
+  {{ serviceName }}:
+    image: {{ serviceName }}
+    build: .
+    environment:
+      NODE_ENV: production
+{{#if ports}}
+    ports:
+{{#each ports}}
+      - {{ . }}:{{ . }}
+{{/each}}
+{{/if}}
