@@ -13,12 +13,12 @@ import { localize } from '../../localize';
 import { unresolveWorkspaceFolder } from '../../utils/resolveVariables';
 import { NetCoreScaffoldingWizardContext } from './netCore/NetCoreScaffoldingWizardContext';
 import { PythonScaffoldingWizardContext } from './python/PythonScaffoldingWizardContext';
-import { ScaffoldingWizardContext } from './ScaffoldingWizardContext';
+import { ServiceScaffoldingWizardContext } from './ScaffoldingWizardContext';
 
-export class ScaffoldDebuggingStep extends AzureWizardExecuteStep<ScaffoldingWizardContext> {
+export class ScaffoldDebuggingStep extends AzureWizardExecuteStep<ServiceScaffoldingWizardContext> {
     public readonly priority: number = 1000;
 
-    public async execute(wizardContext: ScaffoldingWizardContext, progress: Progress<{ message?: string; increment?: number; }>): Promise<void> {
+    public async execute(wizardContext: ServiceScaffoldingWizardContext, progress: Progress<{ message?: string; increment?: number; }>): Promise<void> {
         progress.report({ message: localize('vscode-docker.scaffold.scaffoldDebuggingStep.progress', 'Adding debug configuration and tasks...') });
 
         let dockerfilePath: string;
@@ -68,7 +68,7 @@ export class ScaffoldDebuggingStep extends AzureWizardExecuteStep<ScaffoldingWiz
         }
     }
 
-    public shouldExecute(wizardContext: ScaffoldingWizardContext): boolean {
+    public shouldExecute(wizardContext: ServiceScaffoldingWizardContext): boolean {
         switch (wizardContext.platform) {
             case 'Node.js':
             case '.NET: ASP.NET Core':

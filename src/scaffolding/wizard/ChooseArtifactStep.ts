@@ -5,10 +5,10 @@
 
 import { ext } from '../../extensionVariables';
 import { resolveFilesOfPattern } from '../../utils/quickPickFile';
-import { ScaffoldingWizardContext } from './ScaffoldingWizardContext';
+import { ServiceScaffoldingWizardContext } from './ScaffoldingWizardContext';
 import { TelemetryPromptStep } from './TelemetryPromptStep';
 
-export class ChooseArtifactStep<TWizardContext extends ScaffoldingWizardContext> extends TelemetryPromptStep<TWizardContext> {
+export class ChooseArtifactStep<TWizardContext extends ServiceScaffoldingWizardContext> extends TelemetryPromptStep<TWizardContext> {
     public constructor(protected readonly promptText: string, protected readonly globPatterns: string[], protected readonly noItemsMessage: string) {
         super();
     }

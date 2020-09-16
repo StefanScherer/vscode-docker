@@ -8,11 +8,11 @@ import { PythonDefaultPorts, PythonProjectType, PythonTarget } from '../../../ut
 import { ChoosePortsStep } from '../ChoosePortsStep';
 import { ScaffoldDebuggingStep } from '../ScaffoldDebuggingStep';
 import { ScaffoldFileStep } from '../ScaffoldFileStep';
-import { ScaffoldingWizardContext } from '../ScaffoldingWizardContext';
+import { ServiceScaffoldingWizardContext } from '../ScaffoldingWizardContext';
 import { ChoosePythonArtifactStep } from './ChoosePythonArtifactStep';
 import { PythonGatherInformationStep } from './PythonGatherInformationStep';
 
-export interface PythonScaffoldingWizardContext extends ScaffoldingWizardContext {
+export interface PythonScaffoldingWizardContext extends ServiceScaffoldingWizardContext {
     pythonProjectType?: PythonProjectType;
     pythonArtifact?: PythonTarget;
     pythonCmdParts?: string[];
@@ -22,14 +22,14 @@ export interface PythonScaffoldingWizardContext extends ScaffoldingWizardContext
     wsgiComment?: string;
 }
 
-export function getPythonSubWizardOptions(wizardContext: ScaffoldingWizardContext): IWizardOptions<PythonScaffoldingWizardContext> {
+export function getPythonSubWizardOptions(wizardContext: ServiceScaffoldingWizardContext): IWizardOptions<PythonScaffoldingWizardContext> {
     const promptSteps: AzureWizardPromptStep<PythonScaffoldingWizardContext>[] = [
         new ChoosePythonArtifactStep(),
     ];
 
-    if (wizardContext.platform === 'Python: Django' && (wizardContext.scaffoldType === 'all' || wizardContext.scaffoldType === 'compose')) {
+    if (wizardContext.platform === 'Python: Django' && wizardContext.scaffoldType !== 'debugging') {
         promptSteps.push(new ChoosePortsStep([PythonDefaultPorts.get('django')]));
-    } else if (wizardContext.platform === 'Python: Flask' && (wizardContext.scaffoldType === 'all' || wizardContext.scaffoldType === 'compose')) {
+    } else if (wizardContext.platform === 'Python: Flask' && wizardContext.scaffoldType !== 'debugging') {
         promptSteps.push(new ChoosePortsStep([PythonDefaultPorts.get('flask')]));
     }
 

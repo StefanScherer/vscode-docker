@@ -5,15 +5,15 @@
 
 import { AzureWizardPromptStep, IWizardOptions } from 'vscode-azureextensionui';
 import { ChoosePortsStep } from '../ChoosePortsStep';
-import { ScaffoldingWizardContext } from '../ScaffoldingWizardContext';
+import { ServiceScaffoldingWizardContext } from '../ScaffoldingWizardContext';
 import { ChooseJavaArtifactStep } from './ChooseJavaArtifactStep';
 import { JavaGatherInformationStep } from './JavaGatherInformationStep';
 
-export interface JavaScaffoldingWizardContext extends ScaffoldingWizardContext {
+export interface JavaScaffoldingWizardContext extends ServiceScaffoldingWizardContext {
     relativeJavaOutputPath?: string;
 }
 
-export function getJavaSubWizardOptions(wizardContext: ScaffoldingWizardContext): IWizardOptions<JavaScaffoldingWizardContext> {
+export function getJavaSubWizardOptions(wizardContext: ServiceScaffoldingWizardContext): IWizardOptions<JavaScaffoldingWizardContext> {
     const promptSteps: AzureWizardPromptStep<JavaScaffoldingWizardContext>[] = [
         new ChooseJavaArtifactStep(),
         new ChoosePortsStep([3000]),

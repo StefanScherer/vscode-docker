@@ -5,7 +5,7 @@
 
 import { ScaffoldingWizardContext } from './wizard/ScaffoldingWizardContext';
 
-export function copyWizardContext(wizardContext: Partial<ScaffoldingWizardContext>, priorWizardContext: ScaffoldingWizardContext | undefined): void {
+export function copyWizardContext<T extends ScaffoldingWizardContext>(wizardContext: Partial<T>, priorWizardContext: T | undefined): void {
     if (!priorWizardContext) {
         return;
     }

@@ -3,11 +3,11 @@
  *  Licensed under the MIT License. See LICENSE.md in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { localize } from "../../../localize";
-import { ChooseArtifactStep } from "../ChooseArtifactStep";
-import { ScaffoldingWizardContext } from "../ScaffoldingWizardContext";
+import { localize } from '../../../localize';
+import { ChooseArtifactStep } from '../ChooseArtifactStep';
+import { JavaScaffoldingWizardContext } from './JavaScaffoldingWizardContext';
 
-export class ChooseJavaArtifactStep extends ChooseArtifactStep<ScaffoldingWizardContext> {
+export class ChooseJavaArtifactStep extends ChooseArtifactStep<JavaScaffoldingWizardContext> {
     public constructor() {
         super(
             localize('vscode-docker.scaffold.chooseJavaArtifactStep.promptText', 'Choose a build metadata file (pom.xml or build.gradle)'),
@@ -16,7 +16,7 @@ export class ChooseJavaArtifactStep extends ChooseArtifactStep<ScaffoldingWizard
         );
     }
 
-    public async prompt(wizardContext: ScaffoldingWizardContext): Promise<void> {
+    public async prompt(wizardContext: JavaScaffoldingWizardContext): Promise<void> {
         // Java's behavior is to look for a POM or Gradle file, but if none is present no error is thrown
         try {
             await super.prompt(wizardContext);

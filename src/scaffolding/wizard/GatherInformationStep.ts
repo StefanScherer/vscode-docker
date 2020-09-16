@@ -4,10 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { getValidImageNameFromPath } from '../../utils/getValidImageName';
-import { ScaffoldingWizardContext } from './ScaffoldingWizardContext';
+import { ServiceScaffoldingWizardContext } from './ScaffoldingWizardContext';
 import { TelemetryPromptStep } from './TelemetryPromptStep';
 
-export class GatherInformationStep<TWizardContext extends ScaffoldingWizardContext> extends TelemetryPromptStep<TWizardContext> {
+export class GatherInformationStep<TWizardContext extends ServiceScaffoldingWizardContext> extends TelemetryPromptStep<TWizardContext> {
     public async prompt(wizardContext: TWizardContext): Promise<void> {
         if (!wizardContext.serviceName) {
             wizardContext.serviceName = getValidImageNameFromPath(wizardContext.workspaceFolder.uri.fsPath);

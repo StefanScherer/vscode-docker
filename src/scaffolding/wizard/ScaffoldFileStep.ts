@@ -12,8 +12,8 @@ import { AzureWizardExecuteStep, DialogResponses, UserCancelledError } from 'vsc
 import { ext } from '../../extensionVariables';
 import { localize } from '../../localize';
 import { pathNormalize } from '../../utils/pathNormalize';
-import { PlatformOS } from '../../utils/platform';
-import { ScaffoldedFileType, ScaffoldingWizardContext } from './ScaffoldingWizardContext';
+import { Platform, PlatformOS } from '../../utils/platform';
+import { ScaffoldedFileType, ScaffoldingWizardContext, ServiceInfo } from './ScaffoldingWizardContext';
 
 Handlebars.registerHelper('workspaceRelative', (wizardContext: ScaffoldingWizardContext, absolutePath: string, platform: PlatformOS = 'Linux') => {
     const workspaceFolder: vscode.WorkspaceFolder = wizardContext.workspaceFolder;
@@ -57,15 +57,26 @@ Handlebars.registerHelper('join', (a: never[] | undefined, b: never[] | undefine
     }
 });
 
-export class ScaffoldFileStep<TWizardContext extends ScaffoldingWizardContext> extends AzureWizardExecuteStep<TWizardContext> {
+Handlebars.registerHelper('getComposeServiceContents', async (service: ServiceInfo, debug: boolean) => {
+    const inputPath = await getInputPath(debug ? 'docker-compose.debug.service' : 'docker-compose.service', service.platform);
+    const input = await fse.readFile(inputPath, 'utf-8');
+    const template = Handlebars.compile(input);
+
+    return template(service);
+});
+
+export class ScaffoldFileStep extends AzureWizardExecuteStep<ScaffoldingWizardContext> {
     public constructor(private readonly fileType: ScaffoldedFileType, public readonly priority: number) {
         super();
     }
 
-    public async execute(wizardContext: TWizardContext, progress: Progress<{ message?: string; increment?: number; }>): Promise<void> {
+    public async execute(wizardContext: ScaffoldingWizardContext, progress: Progress<{ message?: string; increment?: number; }>): Promise<void> {
         progress.report({ message: localize('vscode-docker.scaffold.scaffoldFileStep.progress', 'Creating \'{0}\'...', this.fileType) });
 
-        const inputPath = await this.getInputPath(wizardContext);
+        // If this is scaffolding for a specific service we need the platform;
+        // Otherwise it is scaffolding for compose all-up and it is not needed
+        const platform: Platform | undefined = (wizardContext as ServiceInfo).platform;
+        const inputPath = await getInputPath(this.fileType, platform);
 
         if (!inputPath) {
             // If there's no template, skip
@@ -84,81 +95,52 @@ export class ScaffoldFileStep<TWizardContext extends ScaffoldingWizardContext> e
         await fse.writeFile(outputPath, output, { encoding: 'utf-8' });
     }
 
-    public shouldExecute(wizardContext: TWizardContext): boolean {
+    public shouldExecute(wizardContext: ScaffoldingWizardContext): boolean {
         // If this step is created it always need to be executed
         return true;
     }
 
-    private async getInputPath(wizardContext: TWizardContext): Promise<string> {
-        const config = vscode.workspace.getConfiguration('docker');
-        const settingsTemplatesPath = config.get<string | undefined>('scaffolding.templatePath', undefined);
-        const defaultTemplatesPath = path.join(ext.context.asAbsolutePath('resources'), 'templates');
+    private async getOutputPath(wizardContext: ScaffoldingWizardContext): Promise<string> {
+        let scaffoldFolder: string;
 
-        let subPath: string;
-        switch (wizardContext.platform) {
-            case 'Node.js':
-                subPath = path.join('node', `${this.fileType}.template`);
-                break;
-            case '.NET: ASP.NET Core':
-            case '.NET: Core Console':
-                subPath = path.join('netCore', `${this.fileType}.template`);
-                break;
-            case 'Python: Django':
-            case 'Python: Flask':
-            case 'Python: General':
-                subPath = path.join('python', `${this.fileType}.template`);
-                break;
-            case 'Java':
-                subPath = path.join('java', `${this.fileType}.template`);
-                break;
-            case 'C++':
-                subPath = path.join('cpp', `${this.fileType}.template`);
-                break;
-            case 'Go':
-                subPath = path.join('go', `${this.fileType}.template`);
-                break;
-            case 'Ruby':
-                subPath = path.join('ruby', `${this.fileType}.template`);
-                break;
-            case 'Other':
-                subPath = path.join('other', `${this.fileType}.template`);
-                break;
-            default:
-                throw new Error(localize('vscode-docker.scaffold.scaffoldFileStep.unknownPlatform', 'Unknown platform \'{0}\'', wizardContext.platform));
-        }
-
-        return (settingsTemplatesPath && await this.scanUpwardForFile(path.join(settingsTemplatesPath, subPath))) ||
-            await this.scanUpwardForFile(path.join(defaultTemplatesPath, subPath));
-    }
-
-    private async scanUpwardForFile(file: string, maxDepth: number = 1): Promise<string> {
-        const fileName = path.basename(file);
-        let currentFile = file;
-
-        for (let i = 0; i <= maxDepth; i++) {
-            if (await fse.pathExists(currentFile)) {
-                return currentFile;
-            }
-
-            const parentDir = path.resolve(path.join(path.dirname(currentFile), '..'));
-
-            currentFile = path.join(parentDir, fileName);
-        }
-
-        return undefined;
-    }
-
-    private async getOutputPath(wizardContext: TWizardContext): Promise<string> {
-        if (this.fileType === 'Dockerfile' && wizardContext.artifact &&
-            (wizardContext.platform === 'Node.js' || wizardContext.platform === '.NET: ASP.NET Core' || wizardContext.platform === '.NET: Core Console')) {
-            // Dockerfiles may be placed in subpaths for Node and .NET; the others are always at the workspace folder level
-            return path.join(path.dirname(wizardContext.artifact), this.fileType);
+        if (this.fileType === 'docker-compose.yml' ||
+            this.fileType === 'docker-compose.debug.yml' ||
+            this.fileType === 'requirements.txt') {
+            // Always at the workspace root
+            scaffoldFolder = wizardContext.workspaceFolder.uri.fsPath;
         } else {
-            return path.join(wizardContext.workspaceFolder.uri.fsPath, this.fileType);
+            // Get the artifact or undefined
+            const serviceInfo = wizardContext as Partial<ServiceInfo>;
+            const artifact: string | undefined = serviceInfo.artifact;
+
+            // If the artifact is specified and is a real file, get the containing folder; otherwise get the workspace root
+            const artifactOrWorkspaceFolder = artifact && await fse.pathExists(artifact) ? path.dirname(artifact) : wizardContext.workspaceFolder.uri.fsPath;
+
+            if (this.fileType === 'Dockerfile') {
+                // Dockerfiles are always adjacent the artifact if it exists, otherwise the root.
+                scaffoldFolder = artifactOrWorkspaceFolder;
+            } else if (this.fileType === '.dockerignore') {
+                // For .dockerignore:
+                if (serviceInfo.platform === '.NET: ASP.NET Core' ||
+                    serviceInfo.platform === '.NET: Core Console') {
+                    // For .NET Core, it's always at the root.
+                    scaffoldFolder = wizardContext.workspaceFolder.uri.fsPath;
+                } else {
+                    // For other platforms, it's always adjacent the Dockerfile
+                    scaffoldFolder = artifactOrWorkspaceFolder;
+                }
+            }
         }
+
+        if (!scaffoldFolder) {
+            // Not expected, no need to localize
+            throw new Error(`Unable to determine location to scaffold ${this.fileType}`);
+        }
+
+        return path.join(scaffoldFolder, this.fileType);
     }
 
-    private async promptForOverwriteIfNeeded(wizardContext: TWizardContext, output: string, outputPath: string): Promise<void> {
+    private async promptForOverwriteIfNeeded(wizardContext: ScaffoldingWizardContext, output: string, outputPath: string): Promise<void> {
         if (wizardContext.overwriteAll) {
             // If overwriteAll is set, no need to prompt
             return;
@@ -192,4 +174,65 @@ export class ScaffoldFileStep<TWizardContext extends ScaffoldingWizardContext> e
             wizardContext.overwriteAll = true;
         }
     }
+}
+
+async function getInputPath(fileName: string, platform: Platform | undefined): Promise<string> {
+    const config = vscode.workspace.getConfiguration('docker');
+    const settingsTemplatesPath = config.get<string | undefined>('scaffolding.templatePath', undefined);
+    const defaultTemplatesPath = path.join(ext.context.asAbsolutePath('resources'), 'templates');
+
+    let subPath: string;
+    let scanDepth = 1;
+    switch (platform) {
+        case 'Node.js':
+            subPath = path.join('node', `${fileName}.template`);
+            break;
+        case '.NET: ASP.NET Core':
+        case '.NET: Core Console':
+            subPath = path.join('netCore', `${fileName}.template`);
+            break;
+        case 'Python: Django':
+        case 'Python: Flask':
+        case 'Python: General':
+            subPath = path.join('python', `${fileName}.template`);
+            break;
+        case 'Java':
+            subPath = path.join('java', `${fileName}.template`);
+            break;
+        case 'C++':
+            subPath = path.join('cpp', `${fileName}.template`);
+            break;
+        case 'Go':
+            subPath = path.join('go', `${fileName}.template`);
+            break;
+        case 'Ruby':
+            subPath = path.join('ruby', `${fileName}.template`);
+            break;
+        case 'Other':
+            subPath = path.join('other', `${fileName}.template`);
+            break;
+        default:
+            scanDepth = 0;
+            subPath = `${fileName}.template`;
+    }
+
+    return (settingsTemplatesPath && await scanUpwardForFile(path.join(settingsTemplatesPath, subPath), scanDepth)) ||
+        await scanUpwardForFile(path.join(defaultTemplatesPath, subPath), scanDepth);
+}
+
+async function scanUpwardForFile(file: string, maxDepth: number): Promise<string> {
+    const fileName = path.basename(file);
+    let currentFile = file;
+
+    for (let i = 0; i <= maxDepth; i++) {
+        if (await fse.pathExists(currentFile)) {
+            return currentFile;
+        }
+
+        const parentDir = path.resolve(path.join(path.dirname(currentFile), '..'));
+
+        currentFile = path.join(parentDir, fileName);
+    }
+
+    return undefined;
 }

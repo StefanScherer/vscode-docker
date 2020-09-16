@@ -10,35 +10,41 @@ import { ChooseComposeStep } from './wizard/ChooseComposeStep';
 import { ChoosePlatformStep } from './wizard/ChoosePlatformStep';
 import { ChooseWorkspaceFolderStep } from './wizard/ChooseWorkspaceFolderStep';
 import { ScaffoldFileStep } from './wizard/ScaffoldFileStep';
-import { ScaffoldingWizardContext } from './wizard/ScaffoldingWizardContext';
+import { ComposeScaffoldingWizardContext, ServiceScaffoldingWizardContext } from './wizard/ScaffoldingWizardContext';
 
-export async function scaffold(wizardContext: Partial<ScaffoldingWizardContext>, apiInput?: ScaffoldingWizardContext): Promise<void> {
+export async function scaffold(wizardContext: Partial<ServiceScaffoldingWizardContext>, apiInput?: ServiceScaffoldingWizardContext): Promise<void> {
     copyWizardContext(wizardContext, apiInput);
     wizardContext.scaffoldType = 'all';
 
-    const promptSteps: AzureWizardPromptStep<ScaffoldingWizardContext>[] = [
+    const promptSteps: AzureWizardPromptStep<ServiceScaffoldingWizardContext>[] = [
         new ChooseWorkspaceFolderStep(),
         new ChoosePlatformStep(),
         new ChooseComposeStep(),
     ];
 
-    const executeSteps: AzureWizardExecuteStep<ScaffoldingWizardContext>[] = [
+    const executeSteps: AzureWizardExecuteStep<ServiceScaffoldingWizardContext>[] = [
         new ScaffoldFileStep('.dockerignore', 100),
         new ScaffoldFileStep('Dockerfile', 200),
     ];
 
-    const wizard = new AzureWizard<ScaffoldingWizardContext>(wizardContext as ScaffoldingWizardContext, {
+    const wizard = new AzureWizard<ServiceScaffoldingWizardContext>(wizardContext as ServiceScaffoldingWizardContext, {
         promptSteps: promptSteps,
         executeSteps: executeSteps,
         title: localize('vscode-docker.scaffold.addDockerFiles', 'Add Docker Files'),
     });
 
     await wizard.prompt();
+    await wizard.execute();
 
     if (wizardContext.scaffoldCompose) {
-        executeSteps.push(new ScaffoldFileStep('docker-compose.yml', 300));
-        executeSteps.push(new ScaffoldFileStep('docker-compose.debug.yml', 400));
-    }
+        const composeWizard = new AzureWizard<ComposeScaffoldingWizardContext>({ ...wizardContext, services: [wizardContext] } as ComposeScaffoldingWizardContext, {
+            promptSteps: undefined, // No additional prompts needed
+            executeSteps: [
+                new ScaffoldFileStep('docker-compose.yml', 300),
+                new ScaffoldFileStep('docker-compose.debug.yml', 400),
+            ],
+        });
 
-    await wizard.execute();
+        await composeWizard.execute();
+    }
 }

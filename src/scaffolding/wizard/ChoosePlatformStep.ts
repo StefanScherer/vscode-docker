@@ -14,15 +14,15 @@ import { getJavaSubWizardOptions } from './java/JavaScaffoldingWizardContext';
 import { getNetCoreSubWizardOptions } from './netCore/NetCoreScaffoldingWizardContext';
 import { getNodeSubWizardOptions } from './node/NodeScaffoldingWizardContext';
 import { getPythonSubWizardOptions } from './python/PythonScaffoldingWizardContext';
-import { ScaffoldingWizardContext } from './ScaffoldingWizardContext';
+import { ServiceScaffoldingWizardContext } from './ScaffoldingWizardContext';
 import { TelemetryPromptStep } from './TelemetryPromptStep';
 
-export class ChoosePlatformStep extends TelemetryPromptStep<ScaffoldingWizardContext> {
+export class ChoosePlatformStep extends TelemetryPromptStep<ServiceScaffoldingWizardContext> {
     public constructor(private readonly platformsList?: Platform[]) {
         super();
     }
 
-    public async prompt(wizardContext: ScaffoldingWizardContext): Promise<void> {
+    public async prompt(wizardContext: ServiceScaffoldingWizardContext): Promise<void> {
         const opt: vscode.QuickPickOptions = {
             matchOnDescription: true,
             matchOnDetail: true,
@@ -39,11 +39,11 @@ export class ChoosePlatformStep extends TelemetryPromptStep<ScaffoldingWizardCon
         wizardContext.platform = response.data;
     }
 
-    public shouldPrompt(wizardContext: ScaffoldingWizardContext): boolean {
+    public shouldPrompt(wizardContext: ServiceScaffoldingWizardContext): boolean {
         return !wizardContext.platform;
     }
 
-    public async getSubWizard(wizardContext: ScaffoldingWizardContext): Promise<IWizardOptions<ScaffoldingWizardContext> | undefined> {
+    public async getSubWizard(wizardContext: ServiceScaffoldingWizardContext): Promise<IWizardOptions<ServiceScaffoldingWizardContext> | undefined> {
         // No output is expected from this but it will call the setTelemetry method
         await super.getSubWizard(wizardContext);
 
@@ -83,7 +83,7 @@ export class ChoosePlatformStep extends TelemetryPromptStep<ScaffoldingWizardCon
         }
     }
 
-    protected setTelemetry(wizardContext: ScaffoldingWizardContext): void {
+    protected setTelemetry(wizardContext: ServiceScaffoldingWizardContext): void {
         wizardContext.telemetry.properties.configurePlatform = wizardContext.platform;
     }
 }

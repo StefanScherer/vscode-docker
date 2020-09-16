@@ -10,7 +10,7 @@ import { PlatformOS } from '../../../utils/platform';
 import { ChooseArtifactStep } from '../ChooseArtifactStep';
 import { ChoosePortsStep } from '../ChoosePortsStep';
 import { ScaffoldDebuggingStep } from '../ScaffoldDebuggingStep';
-import { ScaffoldingWizardContext } from '../ScaffoldingWizardContext';
+import { ServiceScaffoldingWizardContext } from '../ScaffoldingWizardContext';
 import { NetCoreChooseOsStep } from './NetCoreChooseOsStep';
 import { NetCoreGatherInformationStep } from './NetCoreGatherInformationStep';
 
@@ -18,20 +18,20 @@ const chooseProjectFile = localize('vscode-docker.scaffold.platforms.netCore.cho
 const netCoreGlobPatterns = [CSPROJ_GLOB_PATTERN, FSPROJ_GLOB_PATTERN];
 const noProjectFile = localize('vscode-docker.scaffold.platforms.netCore.noProject', 'No C# or F# project files were found in the workspace.');
 
-export interface NetCoreScaffoldingWizardContext extends ScaffoldingWizardContext {
+export interface NetCoreScaffoldingWizardContext extends ServiceScaffoldingWizardContext {
     netCoreAssemblyName?: string;
     netCoreRuntimeBaseImage?: string;
     netCoreSdkBaseImage?: string;
     netCorePlatformOS?: PlatformOS;
 }
 
-export function getNetCoreSubWizardOptions(wizardContext: ScaffoldingWizardContext): IWizardOptions<NetCoreScaffoldingWizardContext> {
+export function getNetCoreSubWizardOptions(wizardContext: ServiceScaffoldingWizardContext): IWizardOptions<NetCoreScaffoldingWizardContext> {
     const promptSteps: AzureWizardPromptStep<NetCoreScaffoldingWizardContext>[] = [
         new ChooseArtifactStep(chooseProjectFile, netCoreGlobPatterns, noProjectFile),
         new NetCoreChooseOsStep(),
     ];
 
-    if (wizardContext.platform === '.NET: ASP.NET Core' && (wizardContext.scaffoldType === 'all' || wizardContext.scaffoldType === 'compose')) {
+    if (wizardContext.platform === '.NET: ASP.NET Core' && wizardContext.scaffoldType !== 'debugging') {
         promptSteps.push(new ChoosePortsStep([80, 443]));
     }
 

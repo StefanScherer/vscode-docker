@@ -6,15 +6,15 @@
 import * as vscode from 'vscode';
 import { ext } from '../../extensionVariables';
 import { localize } from '../../localize';
-import { ScaffoldingWizardContext } from './ScaffoldingWizardContext';
+import { ServiceScaffoldingWizardContext } from './ScaffoldingWizardContext';
 import { TelemetryPromptStep } from './TelemetryPromptStep';
 
-export class ChoosePortsStep extends TelemetryPromptStep<ScaffoldingWizardContext> {
+export class ChoosePortsStep extends TelemetryPromptStep<ServiceScaffoldingWizardContext> {
     public constructor(private readonly defaultPorts: number[]) {
         super();
     }
 
-    public async prompt(wizardContext: ScaffoldingWizardContext): Promise<void> {
+    public async prompt(wizardContext: ServiceScaffoldingWizardContext): Promise<void> {
         const opt: vscode.InputBoxOptions = {
             placeHolder: this.defaultPorts.join(', '),
             prompt: localize('vscode-docker.scaffold.choosePortsStep.whatPorts', 'What port(s) does your app listen on? Enter a comma-separated list, or empty for no exposed port.'),
@@ -32,11 +32,11 @@ export class ChoosePortsStep extends TelemetryPromptStep<ScaffoldingWizardContex
         wizardContext.ports = splitPorts(await ext.ui.showInputBox(opt))
     }
 
-    public shouldPrompt(wizardContext: ScaffoldingWizardContext): boolean {
+    public shouldPrompt(wizardContext: ServiceScaffoldingWizardContext): boolean {
         return wizardContext.ports === undefined;
     }
 
-    protected setTelemetry(wizardContext: ScaffoldingWizardContext): void {
+    protected setTelemetry(wizardContext: ServiceScaffoldingWizardContext): void {
         wizardContext.telemetry.measurements.numPorts = wizardContext.ports?.length ?? 0;
     }
 }
