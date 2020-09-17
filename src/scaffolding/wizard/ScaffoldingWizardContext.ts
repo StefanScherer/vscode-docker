@@ -39,5 +39,5 @@ export interface ServiceScaffoldingWizardContext extends ScaffoldingWizardContex
 
 export interface ComposeScaffoldingWizardContext extends ScaffoldingWizardContext {
     // These come from user choice and calculation
-    services?: ServiceInfo[];
+    services?: (ServiceInfo & { Dockerfile?: string })[];
 }

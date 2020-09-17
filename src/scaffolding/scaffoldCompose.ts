@@ -6,8 +6,8 @@
 import { AzureWizard, AzureWizardExecuteStep, AzureWizardPromptStep } from 'vscode-azureextensionui';
 import { localize } from '../localize';
 import { copyWizardContext } from './copyWizardContext';
-import { ChoosePlatformStep } from './wizard/ChoosePlatformStep';
 import { ChooseWorkspaceFolderStep } from './wizard/ChooseWorkspaceFolderStep';
+import { ChooseDockerfilesStep } from './wizard/compose/ChooseDockerfilesStep';
 import { ScaffoldFileStep } from './wizard/ScaffoldFileStep';
 import { ComposeScaffoldingWizardContext } from './wizard/ScaffoldingWizardContext';
 
@@ -17,8 +17,7 @@ export async function scaffoldCompose(wizardContext: Partial<ComposeScaffoldingW
 
     const promptSteps: AzureWizardPromptStep<ComposeScaffoldingWizardContext>[] = [
         new ChooseWorkspaceFolderStep(),
-        // TODO: Choose dockerfiles and their platforms
-        new ChoosePlatformStep(),
+        new ChooseDockerfilesStep(),
     ];
 
     const executeSteps: AzureWizardExecuteStep<ComposeScaffoldingWizardContext>[] = [
